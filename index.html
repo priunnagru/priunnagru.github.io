@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+
+<head>
+<style>
+#white {color:#FFFFFF}
+.gallery {display:none}
+</style>
+<meta charset="utf-8">
+<title>© Priun US History</title>
+<link rel="stylesheet" type="text/css" href="styles/style.css" media="screen" />
+<link rel="icon" href="images/ico.png">
+</head>
+
+<body>
+<div id ="frame"> <!-- MAIN FRAME -->
+<div id="logo"> <!-- Logo -->
+	<a href="index.html">
+	<img src="images/logo.png" alt="logo" />
+    </a>
+</div> <!-- Logo -->
+<div class="nav"> <!-- Navigation -->
+	<ul>
+   	<li><a href="index.html" id="white">Home</a></li>
+   	<li>
+    <div class="dropdown">
+  		<a href="#" id="white">Directory</a>
+  		<div class="dropdown-content">
+    		<a href="review.html">Review</a>
+            <a href="pages.html">Other Pages</a>
+    		<a href="sources.html">Sources</a>
+  		</div>
+	</div>
+    </li>
+    <li><a href="about.html" id="white">About</a></li>
+	</ul>
+</div> <!-- Navigation -->
+<div id="main">
+    <div id="intro">
+    	<h1>Sputnik 1<br/>&zwnj;</h1>
+        <div class="banner" style="border:5px solid #D6C000; max-width:50%"/>
+ 			<img class="gallery" src="images/img1.jpg" style="width:100%" alt=""/>
+			<img class="gallery" src="images/img2.jpg" style="width:100%" alt=""/>
+			<img class="gallery" src="images/img3.jpg" style="width:100%" alt=""/>
+		</div>
+        <h2>What was it?</h2>
+        <p>Sputnik was the first artificial satellite to ever successfully launch and orbit the Earth, on October 4, 1957. It was around the same size as a beach ball, weighed 180 pounds, and orbited around the earth every 96 minutes at 18,000 miles per hour. Its main purpose was to be the first orbiting artificial satellite, but it also served other purposes such as the calculation of atmospheric density and the collection of radio signals that could give data about the ionosphere. This launch is generally seen as a catalyst to various political, military, technological, and scientific developments. However, the most evident and important effect of the launch was that it marked the beginning of a period of history that is now known as the space race between two main countries, the Soviet Union and the United States of America.</p>
+        <h2>United States Reaction</h2>
+        <p>As a direct result of the Soviet Union’s scientific breakthrough, a period of public fear known as the Sputnik crisis occurred in the states, triggering the creation of organizations such as NASA. Up to this point, the US was the leading dominant world power with inventions such as U2 spy planes. However, studies were done that showed that the Soviet Union has been training many more scientists compared to the United States, and this technological jump was considered a threat to the US national security. Of course, the United States tried as quickly as possible to create an artificial satellite of their own, and they accomplished this a mere three months later with the Explorer 1.</p>
+        <h2>So, Who Won the Race?</h2>
+        <p>The Space Race lasted for 18 years, so there must have been a winner, right? Well, this has been discussed between intellectuals since the end of the race. Of course, these 18 years involved many more technological breakthroughs, including Yuri Gagarin, the first human ever placed in orbit by the Soviet Union in 1961, followed by the United States in 1962. Perhaps the most famous breakthrough in this time was Neil Armstrong and the Apollo project reaching the moon. Some see this as the victory for the United States, however with improving relations between the two countries, the Apollo Soyuz joint mission marked the end of the space race for both countries. So who won the space race? It can be well argued that both won.</p>
+        <h2>Video Review: Who won the space race? - Jeff Steers<br>&zwnj;</h2>
+        <iframe width="1080" height="720" src="https://www.youtube.com/embed/FxpC-8f--xo" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+</div>
+<script>
+var count = 0;
+carousel();
+
+function carousel() {
+    var i;
+    var x = document.getElementsByClassName("gallery");
+    for (i = 0; i < x.length; i++) {
+       x[i].style.display = "none";  
+    }
+    count++;
+    if (count > x.length) {count = 1}    
+    x[count-1].style.display = "block";  
+    setTimeout(carousel, 10000);
+}
+</script>
+</body>
+</html>
