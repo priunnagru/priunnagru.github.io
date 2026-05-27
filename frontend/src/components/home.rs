@@ -58,7 +58,13 @@ pub fn Home() -> Element {
                 div { class: "section-card custom-section",
                     h2 { "🎮 Custom Game" }
                     p { "Pick any two anime and find the path between them" }
-                    a { href: "/game/custom", class: "btn btn-secondary", "Create Custom Game" }
+                    button {
+                        class: "btn btn-secondary",
+                        onclick: move |_| {
+                            navigator.push(Route::CustomGame {});
+                        },
+                        "Create Custom Game"
+                    }
                 }
 
                 // How To Play Section
