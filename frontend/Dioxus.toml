@@ -3,7 +3,7 @@
 [web.app]
 
 # HTML title tag content
-title = "frontend"
+title = "ani-rec-dle"
 
 path = "/"
 
