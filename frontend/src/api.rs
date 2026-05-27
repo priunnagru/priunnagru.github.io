@@ -1,9 +1,17 @@
 use reqwest::Client;
+use serde::Deserialize;
 use gloo_timers::future::TimeoutFuture;
 use crate::types::{Anime, CustomGameInput, GameResponse, RecsInput, RecsResponse, VerifyWinInput, VerifyWinResponse};
 
-const API_URL: &str = "http://localhost:3000";
+const RAW_ENV_URL: &str = "https://gist.githubusercontent.com/priunnagru/e5ec2ec0506d857526bdc49a7ece64ec/raw/anirecdle_env.json";
+const BACKUP_FALLBACK_URL: &str = "http://localhost:3000";
 const MAX_RETRIES: u32 = 3;
+const GIST_RETRY_DELAY_MS: u32 = 1000;
+
+#[derive(Deserialize)]
+struct EnvConfig {
+    backend_url: String,
+}
 
 #[derive(Clone)]
 pub struct ApiClient {
@@ -23,16 +31,52 @@ impl ApiClient {
         Self::default()
     }
 
+    async fn resolve_backend_url(&self) -> String {
+        for attempt in 1..=MAX_RETRIES {
+            log::info!("Attempt {}/{} to fetch raw config...", attempt, MAX_RETRIES);
+
+            // No special GitHub headers or API parsing required anymore
+            let response = self.client.get(RAW_ENV_URL).send().await;
+
+            match response {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        if let Ok(config) = resp.json::<EnvConfig>().await {
+                            log::info!("Using backend url: {}", config.backend_url);
+                            return config.backend_url.trim_end_matches('/').to_string();
+                        }
+                    }
+                    log::warn!("Raw config parsing failed on attempt {}.", attempt);
+                }
+                Err(err) => {
+                    log::error!("Network error fetching raw config on attempt {}: {:?}", attempt, err);
+                }
+            }
+
+            if attempt < MAX_RETRIES {
+                TimeoutFuture::new(GIST_RETRY_DELAY_MS).await;
+            }
+        }
+
+        log::error!("All config resolution retries failed. Falling back to default.");
+        BACKUP_FALLBACK_URL.to_string()
+    }
+
     /// Send a request with automatic retry on 429 (rate limited) responses.
-    /// Uses exponential backoff: 1s, 2s, 4s...
+    /// Dynamically resolves the true active endpoint domain prior to targeting the network.
     async fn send_with_retry<T: serde::de::DeserializeOwned>(
-        request: &reqwest::RequestBuilder,
+        &self,
+        make_request: impl Fn(&Client, &str) -> reqwest::RequestBuilder,
         retry_count: u32,
     ) -> Result<T, String> {
+        // 1. First, find out where our tunnel is pointing right now
+        let base_url = self.resolve_backend_url().await;
+
         for attempt in 0..=retry_count {
+            // 2. Build the request freshly with the correct base endpoint
+            let request = make_request(&self.client, &base_url);
+
             let response = request
-                .try_clone()
-                .expect("unable to clone request")
                 .send()
                 .await
                 .map_err(|e| format!("Request failed: {}", e))?;
@@ -59,41 +103,47 @@ impl ApiClient {
     }
 
     pub async fn get_daily_game(&self) -> Result<GameResponse, String> {
-        let url = format!("{}/game/daily", API_URL);
-        let request = self.client.get(&url);
-        Self::send_with_retry::<GameResponse>(&request, MAX_RETRIES).await
+        Self::send_with_retry::<GameResponse>(
+            self,
+            |client, base_url| client.get(format!("{}/game/daily", base_url)),
+            MAX_RETRIES
+        ).await
     }
 
     pub async fn get_custom_game(&self, start_id: i32, end_id: i32) -> Result<GameResponse, String> {
-        let url = format!("{}/game/custom", API_URL);
         let payload = CustomGameInput { start_id, end_id };
-        let request = self.client.post(&url).json(&payload);
-        Self::send_with_retry::<GameResponse>(&request, MAX_RETRIES).await
+        Self::send_with_retry::<GameResponse>(
+            self,
+            |client, base_url| client.post(format!("{}/game/custom", base_url)).json(&payload),
+            MAX_RETRIES
+        ).await
     }
 
     pub async fn get_recs(&self, token: &str, path: &[i32]) -> Result<RecsResponse, String> {
-        let url = format!("{}/game/recs", API_URL);
         let payload = RecsInput {
             token: token.to_string(),
             path: path.to_vec(),
         };
-        let request = self.client.post(&url).json(&payload);
-        Self::send_with_retry::<RecsResponse>(&request, MAX_RETRIES).await
+        Self::send_with_retry::<RecsResponse>(
+            self,
+            |client, base_url| client.post(format!("{}/game/recs", base_url)).json(&payload),
+            MAX_RETRIES
+        ).await
     }
 
     pub async fn verify_win(&self, token: &str, path: &[i32]) -> Result<VerifyWinResponse, String> {
-        let url = format!("{}/game/win", API_URL);
         let payload = VerifyWinInput {
             token: token.to_string(),
             path: path.to_vec(),
         };
-        let request = self.client.post(&url).json(&payload);
-        Self::send_with_retry::<VerifyWinResponse>(&request, MAX_RETRIES).await
+        Self::send_with_retry::<VerifyWinResponse>(
+            self,
+            |client, base_url| client.post(format!("{}/game/win", base_url)).json(&payload),
+            MAX_RETRIES
+        ).await
     }
 
-    pub async fn search_anime(&self, query: &str) -> Result<Vec<Anime>, String> {
-        // This would need a search endpoint on the server
-        // For now, we'll implement a simple search if needed
+    pub async fn search_anime(&self, _query: &str) -> Result<Vec<Anime>, String> {
         Err("Search not implemented yet".to_string())
     }
 }

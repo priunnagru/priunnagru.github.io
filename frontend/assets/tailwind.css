@@ -187,6 +187,9 @@
       max-width: 96rem;
     }
   }
+  .contents {
+    display: contents;
+  }
   .grid {
     display: grid;
   }

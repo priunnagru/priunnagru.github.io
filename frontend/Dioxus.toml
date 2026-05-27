@@ -5,6 +5,8 @@
 # HTML title tag content
 title = "frontend"
 
+path = "/"
+
 # include `assets` in web platform
 [web.resource]
 
