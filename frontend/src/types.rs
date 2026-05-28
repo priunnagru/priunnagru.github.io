@@ -1,5 +1,21 @@
 use serde::{Deserialize, Serialize};
 
+/// API-level error types the frontend can react to.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ApiError {
+    Conflict(String),
+    Other(String),
+}
+
+impl std::fmt::Display for ApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ApiError::Conflict(msg) => write!(f, "Conflict: {msg}"),
+            ApiError::Other(msg) => write!(f, "{msg}"),
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Debug, PartialEq)]
 pub struct Anime {
     pub id: i32,
@@ -15,6 +31,8 @@ pub struct GameResponse {
     pub token: String,
     pub start: Anime,
     pub end: Anime,
+    #[serde(default)]
+    pub is_daily: bool,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -37,6 +55,22 @@ pub struct VerifyWinInput {
 #[derive(Deserialize, Clone, Debug)]
 pub struct VerifyWinResponse {
     pub is_valid: bool,
+    pub game_type: String,
+    pub min_steps: usize,
+}
+
+/// Input for the solution reveal endpoint.
+#[derive(Serialize, Clone, Debug)]
+pub struct SolutionInput {
+    pub token: String,
+    pub path: Vec<i32>,
+}
+
+/// Response from the solution endpoint — contains the full solution paths.
+#[derive(Deserialize, Clone, Debug)]
+pub struct SolutionData {
+    pub is_valid: bool,
+    pub game_type: String,
     pub shortest_paths: Vec<Vec<Anime>>,
     pub min_steps: usize,
 }

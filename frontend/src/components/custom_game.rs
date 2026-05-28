@@ -1,15 +1,16 @@
 use dioxus::prelude::*;
 use crate::api::ApiClient;
-use crate::types::GameResponse;
+use crate::types::{ApiError, GameResponse};
 use crate::Route;
 
 #[component]
 pub fn CustomGame() -> Element {
     let navigator = use_navigator();
-    let mut game_state = use_context::<Signal<Option<GameResponse>>>();
+    let game_state = use_context::<Signal<Option<GameResponse>>>();
     let error = use_signal(|| Option::<String>::None);
     let loading = use_signal(|| false);
     let result = use_signal(|| Option::<Result<GameResponse, String>>::None);
+    let is_conflict = use_signal(|| false);
 
     let mut start_id = use_signal(|| String::new());
     let mut end_id = use_signal(|| String::new());
@@ -49,6 +50,19 @@ pub fn CustomGame() -> Element {
                 div { class: "error-box", "{e}" }
             }
 
+            if is_conflict() {
+                div { class: "conflict-banner",
+                    p { "⚠️ This pair is today's daily — play it as the daily instead!" }
+                    button {
+                        class: "btn btn-primary",
+                        onclick: move |_| {
+                            navigator.push(Route::Home {});
+                        },
+                        "Play Daily Challenge"
+                    }
+                }
+            }
+
             button {
                 class: "btn btn-primary",
                 disabled: loading() || start_id().is_empty() || end_id().is_empty(),
@@ -59,6 +73,7 @@ pub fn CustomGame() -> Element {
                         let mut game_state = game_state.clone();
                         let mut result_sig = result.clone();
                         let mut loading_sig = loading.clone();
+                        let mut conflict_sig = is_conflict.clone();
                         let navigator = navigator.clone();
                         spawn(async move {
                             loading_sig.set(true);
@@ -66,9 +81,19 @@ pub fn CustomGame() -> Element {
                             match client.get_custom_game(start, end).await {
                                 Ok(response) => {
                                     result_sig.set(None);
-                                    game_state.set(Some(response));
+                                    game_state.set(Some(GameResponse {
+                                        token: response.token,
+                                        start: response.start,
+                                        end: response.end,
+                                        is_daily: false,
+                                    }));
                                     loading_sig.set(false);
                                     navigator.push(Route::GamePage {});
+                                }
+                                Err(ApiError::Conflict(_)) => {
+                                    conflict_sig.set(true);
+                                    result_sig.set(None);
+                                    loading_sig.set(false);
                                 }
                                 Err(e) => {
                                     result_sig

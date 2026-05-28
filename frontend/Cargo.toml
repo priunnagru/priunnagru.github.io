@@ -4,13 +4,18 @@ version = "0.1.0"
 authors = ["priunnagru <priunnagru@gmail.com>"]
 edition = "2021"
 
+[build-dependencies]
+dotenvy = "0.15.7"
+
 [dependencies]
 dioxus = { version = "0.7.1", features = ["router"] }
 reqwest = { version = "0.13.3", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1"
-gloo-timers = { version = "0.3", features = ["futures"] }
-log = "0.4"
+js-sys = "0.3.99"
+web-sys = { version = "0.3.99", features = ["Window", "Storage"] }
+log = "0.4.30"
+gloo-timers = { version = "0.4.0", features = ["futures"] }
+serde_json = "1.0.150"
 
 [features]
 default = ["web"]

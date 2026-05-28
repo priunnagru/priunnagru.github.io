@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::types::GameResponse;
 use crate::components::home::Home;
-use crate::components::game::Game;
+use crate::components::game::{Game, CardSizeProvider};
 use crate::components::custom_game::CustomGame;
 
 mod types;
@@ -64,10 +64,13 @@ fn GamePage() -> Element {
     match game {
         Some(game) => {
             rsx! {
-                Game {
-                    token: game.token.clone(),
-                    start: game.start.clone(),
-                    end: game.end.clone(),
+                CardSizeProvider {
+                    Game {
+                        token: game.token.clone(),
+                        start: game.start.clone(),
+                        end: game.end.clone(),
+                        is_daily: game.is_daily,
+                    }
                 }
             }
         }

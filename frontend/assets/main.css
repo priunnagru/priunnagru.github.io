@@ -336,10 +336,37 @@ body {
     font-weight: bold;
 }
 
+/* Card size slider */
+.card-size-slider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.card-size-slider input[type="range"] {
+    flex: 1;
+    max-width: 200px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.slider-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 3ch;
+    text-align: right;
+}
+
 /* Recommendations grid */
 .recs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width, 200px), 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -401,8 +428,9 @@ body {
 
 .anime-image {
     width: 100%;
-    height: 280px;
+    height: var(--card-img-height, 280px);
     object-fit: cover;
+    transition: height 0.2s ease;
 }
 
 .anime-info {
@@ -696,6 +724,164 @@ body {
     .app-main {
         padding: 1rem;
     }
+}
+
+/* ─── Intermediate Win Screen ─────────────────────────────────── */
+
+.win-intermediate {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.win-intermediate h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.win-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-secondary);
+}
+
+.btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color);
+}
+
+.btn-back {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-back:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+.attempt-stat {
+    color: var(--accent-warning) !important;
+    font-weight: 600 !important;
+}
+
+/* ─── Conflict Banner ──────────────────────────────────────────── */
+
+.conflict-banner {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 500px;
+    margin: 2rem auto;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--accent-warning);
+    border-radius: var(--radius-lg);
+}
+
+.conflict-banner h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.conflict-banner p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+/* ─── Completed Today Screen ──────────────────────────────────── */
+
+.completed-today {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 500px;
+    margin: 2rem auto;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid var(--accent-success);
+    border-radius: var(--radius-lg);
+}
+
+.completed-today h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.completed-note {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* ─── Card Size Slider ────────────────────────────────────────── */
+
+.card-size-slider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.card-size-slider label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.card-size-slider input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent-primary);
+}
+
+.slider-value {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 3ch;
+    text-align: right;
 }
 
 
