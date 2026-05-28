@@ -35,7 +35,9 @@ pub fn Home() -> Element {
                                     class: "btn btn-primary",
                                     onclick: move |_| {
                                         if let Some(Ok(ref game)) = daily_game() {
-                                            game_state.set(Some(game.clone()));
+                                            let mut gs = game.clone();
+                                            gs.is_daily = true;
+                                            game_state.set(Some(gs));
                                             {
                                                 navigator.push(Route::GamePage {});
                                             }
@@ -78,8 +80,36 @@ pub fn Home() -> Element {
                     }
                 }
             }
+
+            {debug_clear_button()}
         }
     }
+}
+
+#[cfg(debug_mode)]
+fn debug_clear_button() -> Element {
+    rsx! {
+        button {
+            class: "btn btn-back debug-clear-btn",
+            onclick: move |_| {
+                #[cfg(feature = "web")]
+                {
+                    use web_sys::window;
+                    if let Some(window) = window() {
+                        if let Ok(Some(storage)) = window.local_storage() {
+                            let _ = storage.clear();
+                        }
+                    }
+                }
+            },
+            "🗑 Clear localStorage (debug)"
+        }
+    }
+}
+
+#[cfg(not(debug_mode))]
+fn debug_clear_button() -> Element {
+    rsx! {}
 }
 
 #[component]

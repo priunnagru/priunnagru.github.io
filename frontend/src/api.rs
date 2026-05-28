@@ -1,12 +1,16 @@
 use reqwest::Client;
 use serde::Deserialize;
 use gloo_timers::future::TimeoutFuture;
-use crate::types::{Anime, CustomGameInput, GameResponse, RecsInput, RecsResponse, VerifyWinInput, VerifyWinResponse};
+use crate::types::{ApiError, Anime, CustomGameInput, GameResponse, RecsInput, RecsResponse,
+    SolutionData, SolutionInput, VerifyWinInput, VerifyWinResponse};
 
 const RAW_ENV_URL: &str = "https://gist.githubusercontent.com/priunnagru/e5ec2ec0506d857526bdc49a7ece64ec/raw/anirecdle_env.json";
 const BACKUP_FALLBACK_URL: &str = "http://localhost:3000";
 const MAX_RETRIES: u32 = 3;
 const GIST_RETRY_DELAY_MS: u32 = 1000;
+
+#[cfg(debug_mode)]
+const LOCALHOST_URL: &str = "http://localhost:3000";
 
 #[derive(Deserialize)]
 struct EnvConfig {
@@ -32,6 +36,12 @@ impl ApiClient {
     }
 
     async fn resolve_backend_url(&self) -> String {
+        #[cfg(debug_mode)]
+        {
+            log::info!("Debug mode enabled — using localhost backend");
+            return LOCALHOST_URL.to_string();
+        }
+
         for attempt in 1..=MAX_RETRIES {
             log::info!("Attempt {}/{} to fetch raw config...", attempt, MAX_RETRIES);
 
@@ -63,23 +73,21 @@ impl ApiClient {
     }
 
     /// Send a request with automatic retry on 429 (rate limited) responses.
-    /// Dynamically resolves the true active endpoint domain prior to targeting the network.
+    /// Returns ApiError::Conflict on 409, ApiError::Other for all other failures.
     async fn send_with_retry<T: serde::de::DeserializeOwned>(
         &self,
         make_request: impl Fn(&Client, &str) -> reqwest::RequestBuilder,
         retry_count: u32,
-    ) -> Result<T, String> {
-        // 1. First, find out where our tunnel is pointing right now
+    ) -> Result<T, ApiError> {
         let base_url = self.resolve_backend_url().await;
 
         for attempt in 0..=retry_count {
-            // 2. Build the request freshly with the correct base endpoint
             let request = make_request(&self.client, &base_url);
 
             let response = request
                 .send()
                 .await
-                .map_err(|e| format!("Request failed: {}", e))?;
+                .map_err(|e| ApiError::Other(format!("Request failed: {}", e)))?;
 
             let status = response.status();
 
@@ -90,19 +98,23 @@ impl ApiClient {
                 continue;
             }
 
+            if status == reqwest::StatusCode::CONFLICT {
+                return Err(ApiError::Conflict("This request conflicts with today's daily challenge.".to_string()));
+            }
+
             if !status.is_success() {
-                return Err(format!("Server returned {}", status));
+                return Err(ApiError::Other(format!("Server returned {}", status)));
             }
 
             return response
                 .json::<T>()
                 .await
-                .map_err(|e| format!("Failed to parse response: {}", e));
+                .map_err(|e| ApiError::Other(format!("Failed to parse response: {}", e)));
         }
-        Err("Rate limited - too many retries".to_string())
+        Err(ApiError::Other("Rate limited - too many retries".to_string()))
     }
 
-    pub async fn get_daily_game(&self) -> Result<GameResponse, String> {
+    pub async fn get_daily_game(&self) -> Result<GameResponse, ApiError> {
         Self::send_with_retry::<GameResponse>(
             self,
             |client, base_url| client.get(format!("{}/game/daily", base_url)),
@@ -110,7 +122,7 @@ impl ApiClient {
         ).await
     }
 
-    pub async fn get_custom_game(&self, start_id: i32, end_id: i32) -> Result<GameResponse, String> {
+    pub async fn get_custom_game(&self, start_id: i32, end_id: i32) -> Result<GameResponse, ApiError> {
         let payload = CustomGameInput { start_id, end_id };
         Self::send_with_retry::<GameResponse>(
             self,
@@ -119,7 +131,7 @@ impl ApiClient {
         ).await
     }
 
-    pub async fn get_recs(&self, token: &str, path: &[i32]) -> Result<RecsResponse, String> {
+    pub async fn get_recs(&self, token: &str, path: &[i32]) -> Result<RecsResponse, ApiError> {
         let payload = RecsInput {
             token: token.to_string(),
             path: path.to_vec(),
@@ -131,7 +143,7 @@ impl ApiClient {
         ).await
     }
 
-    pub async fn verify_win(&self, token: &str, path: &[i32]) -> Result<VerifyWinResponse, String> {
+    pub async fn verify_win(&self, token: &str, path: &[i32]) -> Result<VerifyWinResponse, ApiError> {
         let payload = VerifyWinInput {
             token: token.to_string(),
             path: path.to_vec(),
@@ -143,7 +155,19 @@ impl ApiClient {
         ).await
     }
 
-    pub async fn search_anime(&self, _query: &str) -> Result<Vec<Anime>, String> {
-        Err("Search not implemented yet".to_string())
+    pub async fn get_solution(&self, token: &str, path: &[i32]) -> Result<SolutionData, ApiError> {
+        let payload = SolutionInput {
+            token: token.to_string(),
+            path: path.to_vec(),
+        };
+        Self::send_with_retry::<SolutionData>(
+            self,
+            |client, base_url| client.post(format!("{}/game/solution", base_url)).json(&payload),
+            MAX_RETRIES
+        ).await
+    }
+
+    pub async fn search_anime(&self, _query: &str) -> Result<Vec<Anime>, ApiError> {
+        Err(ApiError::Other("Search not implemented yet".to_string()))
     }
 }

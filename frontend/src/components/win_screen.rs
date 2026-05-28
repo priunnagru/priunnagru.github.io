@@ -3,7 +3,17 @@ use crate::types::Anime;
 use crate::Route;
 
 #[component]
-pub fn WinScreen(start: Anime, end: Anime, user_path: Vec<Anime>, user_steps: usize, min_steps: usize, shortest_paths: Vec<Vec<Anime>>) -> Element {
+pub fn WinScreen(
+    start: Anime,
+    end: Anime,
+    user_path: Vec<Anime>,
+    user_steps: usize,
+    min_steps: usize,
+    shortest_paths: Vec<Vec<Anime>>,
+    game_type: String,
+    first_attempt: Option<usize>,
+    best_attempt: Option<usize>,
+) -> Element {
     let navigator = use_navigator();
     let rating = match (user_steps, min_steps) {
         (u, m) if u == m => "⭐⭐⭐",
@@ -12,6 +22,8 @@ pub fn WinScreen(start: Anime, end: Anime, user_path: Vec<Anime>, user_steps: us
         _ => "🔄",
     };
 
+    let is_daily = game_type == "daily";
+
     rsx! {
         div { class: "win-screen",
             h1 { "You found the path!" }
@@ -19,6 +31,14 @@ pub fn WinScreen(start: Anime, end: Anime, user_path: Vec<Anime>, user_steps: us
             div { class: "win-stats",
                 p { "Your path: {user_steps} steps" }
                 p { "Shortest path: {min_steps} steps" }
+                if is_daily {
+                    if let Some(fa) = first_attempt {
+                        p { class: "attempt-stat", "First attempt: {fa} steps" }
+                    }
+                    if let Some(ba) = best_attempt {
+                        p { class: "attempt-stat", "Best attempt: {ba} steps" }
+                    }
+                }
             }
             div { class: "win-anime-pair",
                 AnimeMiniCard { anime: start.clone(), label: "Start" }
