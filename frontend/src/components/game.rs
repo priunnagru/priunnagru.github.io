@@ -238,13 +238,7 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
             let client = ApiClient::new();
             match client.get_recs(&token, &path_ids).await {
                 Ok(response) => {
-                    let path_ids_set: std::collections::HashSet<i32> =
-                        path_ids.into_iter().collect();
-                    response
-                        .recs
-                        .into_iter()
-                        .filter(|a| !path_ids_set.contains(&a.id))
-                        .collect()
+                    response.recs
                 }
                 Err(ApiError::Conflict(_)) => {
                     // 409 — game conflicts with daily; silently return empty
