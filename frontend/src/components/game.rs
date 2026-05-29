@@ -71,9 +71,9 @@ fn today_date_str() -> String {
         use web_sys::wasm_bindgen::JsValue;
         let ms = Date::now(); // milliseconds since epoch
         let date = Date::new(&JsValue::from_f64(ms));
-        let y = date.get_full_year() as usize;
-        let m = date.get_month() as usize + 1;
-        let d = date.get_date() as usize;
+        let y = date.get_utc_full_year() as usize;
+        let m = date.get_utc_month() as usize + 1;
+        let d = date.get_utc_date() as usize;
         format!("{:04}-{:02}-{:02}", y, m, d)
     }
     #[cfg(not(feature = "web"))]
