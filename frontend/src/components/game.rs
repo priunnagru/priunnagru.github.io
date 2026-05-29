@@ -108,6 +108,11 @@ fn load_attempts() -> (Option<usize>, Option<usize>, Option<usize>, bool) {
                                 return (first, best, min_steps, revealed);
                             }
                         }
+                    } else {
+                        // New day: clear stale daily data
+                        let _ = storage.remove_item(DAILY_DATE_KEY);
+                        let _ = storage.remove_item(DAILY_ATTEMPTS_KEY);
+                        let _ = storage.remove_item(DAILY_REVEALED_KEY);
                     }
                 }
             }
@@ -319,7 +324,8 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
                             revealing_inner.set(true);
                             let ids: Vec<i32> = path_for_sol.read().iter().map(|a| a.id).collect();
                             match ApiClient::new().get_solution(&token_inner, &ids).await {
-                                Ok(sol) => sol_inner.set(Some(sol)),
+                                Ok(sol) if sol.is_valid => sol_inner.set(Some(sol)),
+                                Ok(_) => error_inner.set(Some("Solution is invalid or token expired.".to_string())),
                                 Err(ApiError::Conflict(_)) => conflict_inner.set(true),
                                 Err(e) => {
                                     error_inner
@@ -352,7 +358,7 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
                                 revealing_inner.set(true);
                                 let ids: Vec<i32> = path_for_sol.read().iter().map(|a| a.id).collect();
                                 match ApiClient::new().get_solution(&token_inner, &ids).await {
-                                    Ok(sol) => {
+                                    Ok(sol) if sol.is_valid => {
                                         sol_inner.set(Some(sol));
                                         if is_daily_inner {
                                             let fa = first_inner.read().clone();
@@ -360,6 +366,7 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
                                             save_attempts(fa, ba, Some(response.min_steps), true);
                                         }
                                     }
+                                    Ok(_) => error_inner.set(Some("Solution is invalid or token expired.".to_string())),
                                     Err(ApiError::Conflict(_)) => conflict_inner.set(true),
                                     Err(e) => {
                                         error_inner
@@ -419,7 +426,7 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
 
             spawn(async move {
                 match ApiClient::new().get_solution(&token_for_req, &path_ids).await {
-                    Ok(sol) => {
+                    Ok(sol) if sol.is_valid => {
                         sol_inner.set(Some(sol));
                         if is_daily_inner {
                             let fa = first_inner.read().clone();
@@ -429,6 +436,7 @@ pub fn Game(token: String, start: Anime, end: Anime, is_daily: bool) -> Element 
                         }
                         already_revealed_inner.set(true);
                     }
+                    Ok(_) => error_inner.set(Some("Solution is invalid or token expired.".to_string())),
                     Err(ApiError::Conflict(_)) => conflict_inner.set(true),
                     Err(e) => {
                         error_inner
